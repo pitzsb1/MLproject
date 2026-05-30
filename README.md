@@ -2,191 +2,228 @@
 
 ## Overview
 
-This project investigates the **reliability of building energy efficiency ratings** using the London EPC dataset.
+This project investigates the **reliability and consistency of Energy Performance Certificate (EPC) ratings** using the London EPC dataset.
 
-Rather than treating energy ratings as ground truth, we critically examine whether these ratings are **consistent, trustworthy, and aligned with underlying building characteristics**.
+Unlike conventional studies that focus solely on predicting energy efficiency scores, this project treats the EPC rating system itself as the object of analysis.
 
-By combining supervised learning with consistency analysis, we use machine learning not only to predict ratings, but to **identify hidden inefficiencies and potential inconsistencies in the evaluation system itself**.
+By combining:
 
----
+* Repeated assessments of the same buildings (UPRN-based analysis)
+* Machine learning validation (CatBoost)
+* Hidden inefficiency detection
 
-## Objectives
-
-* Build a predictive model for building energy efficiency ratings (A–G)
-* Evaluate the **consistency of ratings across the same buildings over time**
-* Detect **hidden inefficiencies** where predicted and actual ratings diverge
-* Analyze whether the rating system reflects true building characteristics
+the project evaluates whether EPC ratings remain consistent across time and whether assigned ratings align with underlying building characteristics.
 
 ---
 
-## Dataset
+## Key Findings
 
-* Source: UK Government Open Data (EPC)
-* Dataset:
+### Building Rating Consistency
 
-  * Domestic Energy Performance Certificates (London subset)
+* Approximately **15% of buildings** showed EPC rating changes of **two or more levels**
+* Some buildings exhibited rating shifts as large as **5 levels**
 
----
+```text
+Rating Gap Distribution
 
-## Data Description
-
-### Building Identification
-
-* LMK_KEY (unique certificate ID)
-* UPRN (Unique Property Reference Number)
-
----
-
-### Physical Features
-
-* Property Type
-* Built Form
-* Total Floor Area
-* Construction Age Band
-
----
-
-### Energy & Environmental Features
-
-* Current Energy Rating (A–G)
-* Current Energy Efficiency Score
-* CO2 Emissions (Current)
-* Main Heating Description
-* Tenure
-
----
-
-## Methodology
-
-### 1. Data Preparation
-
-* Filter London buildings using local authority codes (E09)
-* Select relevant physical and energy-related features
-* Handle missing values and categorical encoding
-
----
-
-### 2. Exploratory Data Analysis
-
-* Analyze distribution of energy ratings
-* Examine relationships between building characteristics and efficiency
-* Identify patterns across property types and construction periods
-
----
-
-### 3. Energy Rating Prediction Model
-
-* Models:
-
-  * CatBoost
-  * XGBoost
-* Inputs:
-
-  * Physical and energy-related features
-* Output:
-
-  * Predicted Energy Rating (A–G)
-
----
-
-### 4. Consistency Analysis
-
-* Group records by UPRN (same building)
-* Measure rating variability across time
-
-```id="zv3u0y"
-rating_variation = df.groupby("UPRN")["CURRENT_ENERGY_RATING"].nunique()
+0 → 1008
+1 → 856
+2 → 256
+3 → 64
+4 → 9
+5 → 2
 ```
 
-* Identify buildings with inconsistent rating history
+📌 **Figure 1. Rating Gap Distribution**
+
+> <img width="549" height="393" alt="image" src="https://github.com/user-attachments/assets/63bfd303-539f-4a8f-83fc-9bbfce6f2b4b" />
 
 ---
 
-### 5. Hidden Inefficiency Detection
+### Energy Efficiency Score Variability
 
-* Compare:
+Although building characteristics remained relatively stable, Energy Efficiency scores showed substantial variation.
 
-  * Model-predicted rating vs actual rating
-* Identify:
+```text
+Average Efficiency Gap: 30.9
+Median Efficiency Gap: 29
+Maximum Gap: 78
+```
 
-  * Overestimated efficiency (actual > predicted)
-  * Underestimated efficiency (actual < predicted)
+📌 **Figure 2. Efficiency Gap vs Rating Gap**
+
+> <img width="562" height="455" alt="image" src="https://github.com/user-attachments/assets/340d6025-8882-4cc7-a940-9563b88a2ed9" />
+
+**Key Insight**
+
+Buildings themselves changed little, but their Energy Efficiency scores often changed dramatically.
 
 ---
 
-### 6. Residual-Based Analysis
+## Machine Learning as a Validator
 
-* Treat misclassification patterns as signals of inconsistency
-* Analyze systematic deviations in predictions
+Rather than using machine learning solely for prediction, this project uses it as a **validation tool**.
+
+### Model
+
+* CatBoostClassifier
+* Multi-class classification (A–G)
+
+### Features
+
+```python
+[
+    "TOTAL_FLOOR_AREA",
+    "CO2_EMISSIONS_CURRENT",
+    "PROPERTY_TYPE",
+    "BUILT_FORM",
+    "CONSTRUCTION_AGE_BAND",
+    "TENURE",
+    "MAINHEAT_DESCRIPTION"
+]
+```
+
+### Performance
+
+```text
+Accuracy ≈ 0.72
+```
+
+Most classification errors occurred between neighboring grades (e.g., B↔C, C↔D), suggesting that the EPC system follows a generally consistent structure.
+
+📌 **Figure 3. Confusion Matrix**
+
+> <img width="583" height="547" alt="image" src="https://github.com/user-attachments/assets/9702e4a0-541b-4811-a5bd-111747068d24" />
 
 ---
 
-## Project Structure
+## Feature Importance
 
-```id="6e8w2v"
+Top predictors of EPC ratings:
+
+1. CO2 Emissions
+2. Main Heating Type
+3. Total Floor Area
+4. Construction Age Band
+
+📌 **Figure 4. Feature Importance**
+
+> <img width="844" height="470" alt="image" src="https://github.com/user-attachments/assets/6aeecd12-036a-47df-8b46-4959266d9664" />
+
+---
+
+## Hidden Inefficiency Detection
+
+Buildings were flagged when:
+
+```text
+Predicted Rating > Actual Rating
+```
+
+In other words, the building characteristics suggested a higher EPC rating than the one actually assigned.
+
+### Results
+
+* 18 Hidden Inefficiency candidates discovered
+
+Common patterns:
+
+* Electric underfloor heating
+* Electric storage heaters
+* Community heating schemes
+* Older buildings
+* Flat / Terrace structures
+
+📌 **Figure 5. Heating Types in Hidden Inefficiency Cases**
+
+> <img width="686" height="644" alt="image" src="https://github.com/user-attachments/assets/f2a23c6f-b1ad-4467-b9d8-437880d60309" />
+
+---
+
+## Strong Anomaly Analysis
+
+Strong Anomalies were defined as buildings satisfying both:
+
+* Repeated EPC inconsistency
+* Hidden Inefficiency
+
+### Results
+
+* 8 Strong Anomaly buildings identified
+
+### Representative Case
+
+UPRN: **95509767**
+
+| Year | Rating | Efficiency |
+| ---- | ------ | ---------- |
+| 2013 | D      | 61         |
+| 2016 | G      | 15         |
+
+Building area remained unchanged:
+
+```text
+93㎡ → 93㎡
+```
+
+Heating system remained unchanged:
+
+```text
+Electric underfloor heating
+```
+
+Yet the EPC rating dropped from D to G.
+
+📌 **Figure 6. Strong Anomaly Case Study**
+
+> <img width="624" height="393" alt="image" src="https://github.com/user-attachments/assets/20495003-f2ef-4ed7-8aeb-ec4da893f3d9" />
+
+---
+
+## Policy Implications
+
+The findings suggest that EPC ratings are generally meaningful but may contain inconsistencies under specific conditions.
+
+Potential improvements include:
+
+* Automated EPC validation systems
+* Machine-learning-assisted quality control
+* Reduced dependence on manual assessment inputs
+* Integration of digital building records and smart-meter data
+
+Rather than replacing assessors, these systems could improve the reproducibility and consistency of EPC evaluations.
+
+---
+
+## Key Contribution
+
+Most building energy studies focus on prediction.
+
+This project instead asks:
+
+> **Can we trust the ratings themselves?**
+
+By reframing machine learning as a validation tool rather than a prediction tool, the project identifies hidden inefficiencies, strong anomalies, and potential inconsistencies within a real-world public evaluation system.
+
+---
+
+## Repository Structure
+
+```text
 .
 ├── data/
-│   ├── raw/
-│   ├── processed/
+├── docs/
+│   ├── mid-report.md
+│   └── final-report.md
 ├── notebooks/
-├── src/
-│   ├── preprocessing.py
-│   ├── eda.py
-│   ├── train_model.py
-│   ├── consistency_analysis.py
-│   ├── inefficiency_detection.py
-│   └── explainability.py
 ├── results/
 └── README.md
 ```
 
----
+## Reference Project
 
-## Training Pipeline
+This project was initially inspired by:
 
-1. Data collection and filtering (London subset)
-2. Data cleaning and feature selection
-3. Model training for energy rating prediction
-4. Consistency analysis across buildings
-5. Detection of hidden inefficiencies
-6. Interpretation and reporting
+https://www.kaggle.com/code/michaelfumery/sea-building-energy-and-ghg-prediction
 
----
-
-## Expected Results
-
-* Identification of buildings with inconsistent rating histories
-* Detection of hidden inefficiencies in energy evaluation
-* Insights into discrepancies between predicted and assigned ratings
-
----
-
-## Key Contributions
-
-* Reframing supervised learning as a **tool for data validation**
-* Consistency-based analysis of real-world evaluation systems
-* Detection of structural inconsistencies in energy rating assignments
-
----
-
-## Analysis and Interpretability
-
-* Feature importance analysis (e.g., SHAP)
-* Investigation of factors influencing rating predictions
-* Case studies of inconsistent or anomalous buildings
-
----
-
-## Future Work
-
-* Incorporation of temporal modeling for rating evolution
-* Extension to non-domestic buildings
-* Integration with policy and regulatory evaluation frameworks
-
----
-
-## Conclusion
-
-This project moves beyond traditional prediction tasks by questioning the reliability of energy efficiency ratings themselves.
-
-By using machine learning as a validation tool, we uncover inconsistencies and hidden inefficiencies, offering a more critical and data-driven perspective on building energy evaluation systems.
+However, unlike traditional prediction-focused studies, this work focuses on evaluating the reliability and consistency of the EPC assessment system itself.
