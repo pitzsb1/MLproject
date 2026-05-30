@@ -99,6 +99,8 @@ rating_gap = max(rating) - min(rating)
 
 ## 결과
 
+<img width="549" height="393" alt="image" src="https://github.com/user-attachments/assets/660343ba-edc0-460a-8582-35f3108fb106" />
+
 ```text
 rating_gap 분포
 
@@ -112,6 +114,8 @@ rating_gap 분포
 
 ### 주요 발견
 
+<img width="549" height="393" alt="image" src="https://github.com/user-attachments/assets/b3edce8d-ed85-4b97-b775-ec1a3c6909b9" />
+ 
 약 15%의 건물에서 2단계 이상의 에너지 등급 변화가 발생하였다.
 
 이는 동일 건물에 대해서도 EPC 평가 결과가 항상 일관적이지 않을 수 있음을 시사한다.
@@ -203,6 +207,8 @@ Leakage를 방지하기 위해 CURRENT_ENERGY_EFFICIENCY를 제외하였다.
 
 ## 성능
 
+<img width="583" height="547" alt="image" src="https://github.com/user-attachments/assets/e7b0632a-52fb-4b8b-be4b-68fc97d00b98" />
+
 ```text
 Accuracy ≈ 0.72
 ```
@@ -248,6 +254,8 @@ CatBoost Feature Importance 결과:
 
 ## 결과
 
+<img width="686" height="644" alt="image" src="https://github.com/user-attachments/assets/967e8059-eb81-4247-95ce-1d5b7cfc25bd" />
+
 총 18개의 Hidden Inefficiency 후보 건물을 발견하였다.
 
 대표적인 특징:
@@ -282,6 +290,8 @@ Strong Anomaly는 다음 두 조건을 동시에 만족하는 건물로 정의�
 총 8개의 Strong Anomaly 건물을 발견하였다.
 
 대표 사례:
+
+<img width="624" height="393" alt="image" src="https://github.com/user-attachments/assets/c7671d1b-0501-4be2-a976-acb0f42ea18d" />
 
 ```text
 UPRN: 95509767
