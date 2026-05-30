@@ -1,4 +1,4 @@
-# 프로젝트 중간보고 | Building Energy Efficiency Analysis - London
+# 프로젝트 중간보고 | Building Energy Efficiency Analysis: London EPC
 
 ## 1. 프로젝트 개요
 
