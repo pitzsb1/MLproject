@@ -209,7 +209,7 @@ Leakage를 방지하기 위해 CURRENT_ENERGY_EFFICIENCY를 제외하였다.
 
 # Model Architectiure
 
-<img width="579" height="538" alt="image" src="https://github.com/user-attachments/assets/d3d61364-bad7-4831-9365-3cdfb7f861dd" />
+<img width="1024" height="1536" alt="image" src="https://github.com/user-attachments/assets/61134770-925b-492a-a223-53a0efda3e1d" />
 
 ---
 
