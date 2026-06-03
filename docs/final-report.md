@@ -92,13 +92,6 @@ cols = [
 반복 평가 데이터: 4786 rows
 실제 건물 수: 약 2200개
 ```
-
----
-
-# Frame work
-
-<img width="566" height="582" alt="image" src="https://github.com/user-attachments/assets/8ea70f70-b1d3-429e-a305-a4c20af59adb" />
-
 ---
 
 # 4. 동일 건물 기준 평가 일관성 분석
