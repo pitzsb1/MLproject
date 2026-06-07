@@ -122,8 +122,6 @@ rating_gap 분포
 ```
 
 ### 주요 발견
-
-<img width="549" height="393" alt="image" src="https://github.com/user-attachments/assets/b3edce8d-ed85-4b97-b775-ec1a3c6909b9" />
  
 약 15%의 건물에서 2단계 이상의 에너지 등급 변화가 발생하였다.
 
