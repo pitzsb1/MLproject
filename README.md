@@ -1,27 +1,111 @@
-# Evaluating the Reliability of Energy Ratings and Detecting Hidden Inefficiencies in Buildings
+# Building Energy Efficiency Analysis: London EPC
 
-## Overview
+# 0. Research Background
 
-This project investigates the **reliability and consistency of Energy Performance Certificate (EPC) ratings** using the London EPC dataset.
+The building sector is one of the largest contributors to global energy consumption and carbon emissions. To improve building energy efficiency, the UK government operates the **Energy Performance Certificate (EPC)** system, which evaluates buildings on a scale from **A (most efficient) to G (least efficient)**. EPC ratings are widely used in property transactions, rental markets, and energy policy development.
 
-Unlike conventional studies that focus solely on predicting energy efficiency scores, this project treats the EPC rating system itself as the object of analysis.
+Although EPC ratings serve as an important indicator of building energy performance, relatively few studies have examined whether repeated assessments of the **same building** produce consistent results. If the same building receives substantially different ratings over time, such discrepancies may reflect not only actual changes in building performance but also inconsistencies in the assessment process or data quality.
 
-By combining:
-
-* Repeated assessments of the same buildings (UPRN-based analysis)
-* Machine learning validation (CatBoost)
-* Hidden inefficiency detection
-
-the project evaluates whether EPC ratings remain consistent across time and whether assigned ratings align with underlying building characteristics.
+Previous studies have primarily focused on improving prediction accuracy for EPC ratings or estimating building energy consumption. In contrast, relatively little attention has been given to evaluating the **reliability and consistency of the EPC assessment system itself**.
 
 ---
 
-## Key Findings
+# 1. Project Overview
 
-### Building Rating Consistency
+This project investigates the **reliability and consistency of EPC ratings** using the London Energy Performance Certificate dataset.
 
-* Approximately **15% of buildings** showed EPC rating changes of **two or more levels**
-* Some buildings exhibited rating shifts as large as **5 levels**
+Unlike conventional studies that focus on improving prediction accuracy, this work treats the EPC assessment itself as the subject of analysis. By comparing repeated EPC assessments of identical buildings with machine-learning-based predictions, we evaluate the **consistency and reliability** of the EPC system and identify structurally inconsistent cases, referred to as **Hidden Inefficiencies**.
+
+---
+
+# 2. Dataset
+
+## Dataset
+
+- **Source:** UK Government Open Data
+- **Dataset:** Domestic Energy Performance Certificates (EPC)
+- **Region:** London Boroughs
+- **Format:** Borough-level CSV files
+
+```text
+all-domestic-certificates/
+ ├── domestic-E09xxxx/
+      └── certificates.csv
+```
+
+## Variables
+
+### Building Identification
+
+- UPRN
+- LODGEMENT_DATE
+
+### Energy Assessment
+
+- CURRENT_ENERGY_RATING
+- CURRENT_ENERGY_EFFICIENCY
+- CO2_EMISSIONS_CURRENT
+
+### Building Characteristics
+
+- TOTAL_FLOOR_AREA
+- PROPERTY_TYPE
+- BUILT_FORM
+- CONSTRUCTION_AGE_BAND
+- TENURE
+- MAINHEAT_DESCRIPTION
+
+---
+
+# 3. Data Preprocessing
+
+Only variables directly related to the research objective were retained.
+
+```python
+cols = [
+    "UPRN",
+    "CURRENT_ENERGY_RATING",
+    "CURRENT_ENERGY_EFFICIENCY",
+    "TOTAL_FLOOR_AREA",
+    "CO2_EMISSIONS_CURRENT",
+    "PROPERTY_TYPE",
+    "BUILT_FORM",
+    "CONSTRUCTION_AGE_BAND",
+    "TENURE",
+    "MAINHEAT_DESCRIPTION",
+    "LODGEMENT_DATE"
+]
+```
+
+### Preprocessing Steps
+
+- Removed records with missing UPRN values
+- Removed missing values from key analysis variables
+- Extracted buildings assessed at least twice using UPRN
+
+**Result**
+
+```text
+Total records: 8,228
+Repeated assessment records: 4,786
+Unique buildings: ~2,200
+```
+
+---
+
+# 4. Consistency Analysis of Repeated EPC Assessments
+
+The variation in EPC ratings over time was analyzed for each building.
+
+The **Rating Gap** was defined as the difference between the highest and lowest EPC ratings assigned to the same building.
+
+```python
+rating_gap = max(rating) - min(rating)
+```
+
+## Results
+
+<img width="549" height="393" alt="image" src="https://github.com/user-attachments/assets/a1f4a89c-5a33-4325-a6c6-48df37f77bc2" />
 
 ```text
 Rating Gap Distribution
@@ -34,42 +118,59 @@ Rating Gap Distribution
 5 → 2
 ```
 
-📌 **Figure 1. Rating Gap Distribution**
+### Key Finding
 
-> <img width="549" height="393" alt="image" src="https://github.com/user-attachments/assets/63bfd303-539f-4a8f-83fc-9bbfce6f2b4b" />
+Approximately **15% of buildings experienced EPC rating changes of two or more levels**, suggesting that repeated EPC assessments are not always fully consistent.
 
 ---
 
-### Energy Efficiency Score Variability
+# 5. Energy Efficiency Score Analysis
 
-Although building characteristics remained relatively stable, Energy Efficiency scores showed substantial variation.
+Changes in Energy Efficiency scores were analyzed for each building.
 
-```text
-Average Efficiency Gap: 30.9
-Median Efficiency Gap: 29
-Maximum Gap: 78
+```python
+eff_gap = max(efficiency) - min(efficiency)
 ```
 
-📌 **Figure 2. Efficiency Gap vs Rating Gap**
+## Results
 
-> <img width="562" height="455" alt="image" src="https://github.com/user-attachments/assets/340d6025-8882-4cc7-a940-9563b88a2ed9" />
+```text
+Average : 30.9
+Median  : 29
+Minimum : 13
+Maximum : 78
+```
 
-**Key Insight**
+### Key Finding
 
-Buildings themselves changed little, but their Energy Efficiency scores often changed dramatically.
+Buildings with larger Energy Efficiency score changes tended to exhibit larger Rating Gaps, indicating that EPC rating changes are closely associated with changes in Energy Efficiency scores rather than random variation.
 
 ---
 
-## Machine Learning as a Validator
+# 6. Verification of Physical Building Stability
 
-Rather than using machine learning solely for prediction, this project uses it as a **validation tool**.
+To determine whether the observed rating changes reflected actual structural changes, variations in floor area were examined.
 
-### Model
+## Results
 
-* CatBoostClassifier
-* Multi-class classification (A–G)
+```text
+Median Area Change : 2.5㎡
+75th Percentile    : ~7㎡
+```
 
-### Features
+### Key Finding
+
+Most buildings showed minimal changes in floor area, indicating that the buildings themselves remained largely unchanged while Energy Efficiency scores varied substantially.
+
+---
+
+# 7. Machine Learning-Based Validation
+
+## Model as a Validator
+
+Instead of using machine learning solely for prediction, the model was employed as a **validation tool** for evaluating the EPC assessment system.
+
+## Features
 
 ```python
 [
@@ -83,147 +184,181 @@ Rather than using machine learning solely for prediction, this project uses it a
 ]
 ```
 
-### Performance
+## Model Architecture
+
+<img width="1024" height="1536" alt="image" src="https://github.com/user-attachments/assets/b14cdd08-e268-4191-b9c9-a4348454eb81" />
+
+## Model
+
+- CatBoostClassifier
+- Multi-class Classification (A–G)
+
+## Performance
+
+<img width="583" height="547" alt="image" src="https://github.com/user-attachments/assets/633439bd-d98d-4835-b174-14287ce5929c" />
 
 ```text
 Accuracy ≈ 0.72
 ```
 
-Most classification errors occurred between neighboring grades (e.g., B↔C, C↔D), suggesting that the EPC system follows a generally consistent structure.
+### Interpretation
 
-📌 **Figure 3. Confusion Matrix**
+Using only building characteristics, the model achieved approximately **72% classification accuracy**, indicating that EPC ratings generally follow consistent structural patterns.
 
-> <img width="583" height="547" alt="image" src="https://github.com/user-attachments/assets/9702e4a0-541b-4811-a5bd-111747068d24" />
-
----
-
-## Feature Importance
-
-Top predictors of EPC ratings:
-
-1. CO2 Emissions
-2. Main Heating Type
-3. Total Floor Area
-4. Construction Age Band
-
-📌 **Figure 4. Feature Importance**
-
-> <img width="844" height="470" alt="image" src="https://github.com/user-attachments/assets/6aeecd12-036a-47df-8b46-4959266d9664" />
+Most prediction errors occurred between neighboring grades (e.g., B↔C and C↔D), while extreme misclassifications were rare.
 
 ---
 
-## Hidden Inefficiency Detection
+# 8. Feature Importance
 
-Buildings were flagged when:
+Top features identified by CatBoost:
 
 ```text
-Predicted Rating > Actual Rating
+1. CO2_EMISSIONS_CURRENT
+2. MAINHEAT_DESCRIPTION
+3. TOTAL_FLOOR_AREA
+4. CONSTRUCTION_AGE_BAND
 ```
 
-In other words, the building characteristics suggested a higher EPC rating than the one actually assigned.
+### Key Findings
 
-### Results
+- CO₂ emissions were the most influential factor.
+- Heating systems significantly affected EPC ratings.
+- Building age also played an important role.
 
-* 18 Hidden Inefficiency candidates discovered
-
-Common patterns:
-
-* Electric underfloor heating
-* Electric storage heaters
-* Community heating schemes
-* Older buildings
-* Flat / Terrace structures
-
-📌 **Figure 5. Heating Types in Hidden Inefficiency Cases**
-
-> <img width="686" height="644" alt="image" src="https://github.com/user-attachments/assets/f2a23c6f-b1ad-4467-b9d8-437880d60309" />
+These findings indicate that EPC ratings are strongly influenced by energy consumption characteristics and heating systems.
 
 ---
 
-## Strong Anomaly Analysis
+# 9. Hidden Inefficiency Detection
 
-Strong Anomalies were defined as buildings satisfying both:
+Hidden Inefficiencies were identified by comparing model predictions with actual EPC ratings.
 
-* Repeated EPC inconsistency
-* Hidden Inefficiency
-
-### Results
-
-* 8 Strong Anomaly buildings identified
-
-### Representative Case
-
-UPRN: **95509767**
-
-| Year | Rating | Efficiency |
-| ---- | ------ | ---------- |
-| 2013 | D      | 61         |
-| 2016 | G      | 15         |
-
-Building area remained unchanged:
+Definition:
 
 ```text
-93㎡ → 93㎡
+Predicted Rating > Actual EPC Rating
 ```
 
-Heating system remained unchanged:
+## Results
+
+<img width="686" height="644" alt="image" src="https://github.com/user-attachments/assets/ea869c14-10e9-4079-898e-da4438fd244a" />
+
+A total of **18 Hidden Inefficiency candidates** were identified.
+
+Common characteristics included:
+
+- Electric underfloor heating
+- Electric storage heaters
+- Community heating systems
+- Older buildings
+- Flat and terrace housing
+
+### Interpretation
+
+Although the model predicted these buildings to belong to higher EPC categories, they received relatively low official ratings, suggesting potential structural inconsistencies in the assessment process.
+
+---
+
+# 10. Strong Anomaly Case Study
+
+Strong Anomalies were defined as buildings satisfying both of the following conditions:
+
+- Repeated EPC assessment inconsistency
+- Hidden Inefficiency
+
+## Results
+
+A total of **8 Strong Anomaly buildings** were identified.
+
+Representative Case:
+
+<img width="624" height="393" alt="image" src="https://github.com/user-attachments/assets/4c60dfd9-a435-4ec8-ace9-40317d2df700" />
 
 ```text
-Electric underfloor heating
+UPRN: 95509767
+
+2013
+Rating: D
+Efficiency: 61
+
+2016
+Rating: G
+Efficiency: 15
+
+Floor Area: Unchanged
+Heating System: Unchanged
 ```
 
-Yet the EPC rating dropped from D to G.
+### Interpretation
 
-📌 **Figure 6. Strong Anomaly Case Study**
-
-> <img width="624" height="393" alt="image" src="https://github.com/user-attachments/assets/20495003-f2ef-4ed7-8aeb-ec4da893f3d9" />
+Despite no significant changes in physical building characteristics, both the Energy Efficiency score and EPC rating changed dramatically, suggesting possible inconsistencies in assessment inputs or evaluation procedures.
 
 ---
 
-## Policy Implications
+# 11. Conclusion
 
-The findings suggest that EPC ratings are generally meaningful but may contain inconsistencies under specific conditions.
+This study evaluated the reliability of the London EPC assessment system by combining repeated building assessments with machine-learning-based validation.
 
-Potential improvements include:
+Although the CatBoost model achieved approximately **72% accuracy**, around **15% of buildings exhibited EPC rating changes of two or more levels** across repeated assessments.
 
-* Automated EPC validation systems
-* Machine-learning-assisted quality control
-* Reduced dependence on manual assessment inputs
-* Integration of digital building records and smart-meter data
+Furthermore, Hidden Inefficiency analysis revealed recurring inconsistencies among buildings using electric heating systems, while Strong Anomaly analysis identified buildings whose ratings changed substantially despite stable physical characteristics.
 
-Rather than replacing assessors, these systems could improve the reproducibility and consistency of EPC evaluations.
+Overall, the EPC system appears to be generally reliable; however, certain building types and assessment conditions require additional validation to ensure consistency.
 
 ---
 
-## Key Contribution
+# 12. Project Contribution
 
-Most building energy studies focus on prediction.
+Rather than focusing solely on prediction, this project evaluates the **reliability of a public assessment system** using data-driven methods.
 
-This project instead asks:
+By employing machine learning as a **validator**, we identified Hidden Inefficiencies and Strong Anomalies, providing quantitative evidence of structural limitations within the EPC assessment framework.
 
-> **Can we trust the ratings themselves?**
-
-By reframing machine learning as a validation tool rather than a prediction tool, the project identifies hidden inefficiencies, strong anomalies, and potential inconsistencies within a real-world public evaluation system.
+This analytical framework may support future improvements in energy policy, building assessment standards, and data quality management.
 
 ---
 
-## Repository Structure
+# 13. Policy Recommendations
 
-```text
-.
-├── data/
-├── docs/
-│   ├── mid-report.md
-│   └── final-report.md
-├── notebooks/
-├── results/
-└── README.md
-```
+## 13.1 Automated EPC Validation System
 
-## Reference Project
+Repeated inconsistencies were observed even for identical buildings. An automated validation system could detect suspicious assessment results before official registration, improving the consistency of EPC evaluations.
 
-This project was initially inspired by:
+## 13.2 Reducing Assessor Dependency
 
-https://www.kaggle.com/code/michaelfumery/sea-building-energy-and-ghg-prediction
+Current EPC assessments rely heavily on manually collected information, making results susceptible to differences in assessor interpretation.
 
-However, unlike traditional prediction-focused studies, this work focuses on evaluating the reliability and consistency of the EPC assessment system itself.
+Future EPC assessments could integrate:
+
+- Digital building drawings
+- IoT sensors
+- Smart meter data
+- Automated floor-area measurement systems
+
+This approach would standardize measurement and calculation processes while allowing assessors to focus on professional evaluation, ultimately improving the reproducibility and reliability of EPC ratings.
+
+---
+
+# 14. Comparison with Previous Studies
+
+Previous studies primarily aimed to improve the prediction accuracy of EPC ratings or building energy consumption.
+
+In contrast, this project employs machine learning as a **validation framework** rather than a prediction tool.
+
+By combining repeated assessment analysis with machine-learning validation, we quantitatively evaluated EPC consistency, identified Hidden Inefficiencies, and discovered Strong Anomalies, offering insights beyond conventional prediction-focused research.
+
+---
+
+# 15. Future Work
+
+## 15.1 Nationwide Analysis
+
+Future studies may extend the analysis beyond London to compare EPC consistency across the entire UK.
+
+## 15.2 Integration with Building Renovation Data
+
+Incorporating renovation records, equipment replacement histories, and building permit information would provide deeper insights into the causes of EPC rating changes.
+
+## 15.3 Deployment of an Automated Validation System
+
+The proposed validator could be integrated into future EPC assessment workflows, automatically flagging assessment results that deviate significantly from expected ratings based on building characteristics.
